@@ -12,7 +12,9 @@
     <style>
         /* Sidebar collapse */
         #sidebar.sidebar-expanded {
-            width: 220px;
+            /* width: 220px; */
+            width: 270px;
+
         }
 
         #sidebar.sidebar-collapsed {
@@ -65,14 +67,20 @@
 
                         @php
                             $mainMenu = [
-                                ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'D'],
-                                ['label' => 'Services', 'route' => 'admin.services.index', 'icon' => 'S'],
-                                ['label' => 'Orders', 'route' => null, 'icon' => 'O'],
-                                ['label' => 'Category', 'route' => null, 'icon' => 'C'],
-                                ['label' => 'Users', 'route' => null, 'icon' => 'U'],
-                                ['label' => 'Reports', 'route' => null, 'icon' => 'R'],
+                                ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'heroicon-o-home'],
+                                [
+                                    'label' => 'Services',
+                                    'route' => 'admin.services.index',
+                                    'icon' => 'heroicon-o-briefcase',
+                                ],
+                                ['label' => 'Orders', 'route' => null, 'icon' => 'heroicon-o-shopping-cart'],
+                                ['label' => 'Category', 'route' => null, 'icon' => 'heroicon-o-tag'],
+                                ['label' => 'Users', 'route' => null, 'icon' => 'heroicon-o-user-group'],
+                                ['label' => 'Reports', 'route' => null, 'icon' => 'heroicon-o-chart-bar'],
+                                ['label' => 'Payment', 'route' => null, 'icon' => 'heroicon-o-currency-dollar'],
 
                             ];
+
                         @endphp
 
                         <div class="mt-1 space-y-1">
@@ -91,7 +99,7 @@
                             {{ $isActive
                                 ? 'bg-gold text-white border-gold'
                                 : 'bg-white text-gold border-slate-200 group-hover:border-gold group-hover:bg-gold-light/20' }}">
-                                        {{ $item['icon'] }}
+                                        <x-dynamic-component :component="$item['icon']" class="w-4 h-4" />
                                     </div>
 
                                     <span class="sidebar-label text-[13px]">
@@ -109,7 +117,13 @@
                         </div>
 
                         @php
-                            $settingsMenu = [['label' => 'Configuration', 'route' => null, 'icon' => 'C']];
+                            $settingsMenu = [
+                                [
+                                    'label' => 'Configuration',
+                                    'route' => null,
+                                    'icon' => 'heroicon-o-wrench-screwdriver',
+                                ],
+                            ];
                         @endphp
 
                         <div class="mt-1 space-y-1">
@@ -128,7 +142,7 @@
                             {{ $isActive
                                 ? 'bg-gold text-white border-gold'
                                 : 'bg-white text-gold border-slate-200 group-hover:border-gold group-hover:bg-gold-light/20' }}">
-                                        {{ $item['icon'] }}
+                                        <x-dynamic-component :component="$item['icon']" class="w-4 h-4" />
                                     </div>
 
                                     <span class="sidebar-label text-[13px]">
@@ -171,13 +185,16 @@
                 <div class="flex items-center gap-3">
                     {{-- Sidebar toggle --}}
                     <button id="sidebarToggle"
-                        class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200
-                               hover:border-gold bg-white focus:outline-none">
+                        class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 hover:border-gold bg-white focus:outline-none">
                         <span class="sr-only">Toggle sidebar</span>
-                        <span class="block w-4 border-t border-slate-700"></span>
-                        <span class="block w-4 border-t border-slate-700 mt-1.5"></span>
-                        <span class="block w-4 border-t border-slate-700 mt-1.5"></span>
+
+                        <span class="flex flex-col gap-1.5">
+                            <span class="block h-0.5 w-6 bg-gold rounded"></span>
+                            <span class="block h-0.5 w-6 bg-gold rounded"></span>
+                            <span class="block h-0.5 w-6 bg-gold rounded"></span>
+                        </span>
                     </button>
+
 
                     <div>
                         {{-- <div class="text-[11px] uppercase tracking-[0.18em] text-slate-400">
@@ -191,7 +208,7 @@
 
                 <div class="flex items-center gap-3 text-xs">
 
-                    <span class="hidden sm:inline text-slate-500">Today</span>
+                    {{-- <span class="hidden sm:inline text-slate-500">Today</span> --}}
 
                     {{-- SYSTEM STATUS --}}
                     {{-- <span
@@ -203,20 +220,16 @@
                     {{-- LOGOUT BUTTON --}}
                     <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
-                        {{-- <button
-                            class="inline-flex items-center rounded-full border border-gold bg-white px-3 py-1 text-[11px] text-gold hover:bg-gold-dark hover:text-white transition">
-                            Logout
-                        </button> --}}
                         <button
-                            class="inline-flex items-center rounded-full bg-gold text-white px-5 py-2 text-[13px] font-medium hover:bg-gold-dark transition">
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold text-white
+           text-sm font-medium hover:bg-gold-dark transition duration-150">
+
+                            <x-heroicon-o-arrow-left-on-rectangle class="w-4 h-4" />
+
                             Logout
                         </button>
-
-
                     </form>
-
                 </div>
-
             </header>
 
             {{-- Main content --}}

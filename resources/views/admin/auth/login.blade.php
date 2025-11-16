@@ -1,4 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin-auth')
+
+@section('title', 'Admin Login')
 
 @section('content')
     <div class="min-h-screen flex items-center justify-center px-4">

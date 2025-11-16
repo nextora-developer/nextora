@@ -7,12 +7,64 @@ use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
-    public function index()
-    {
-        $services = Service::orderByDesc('created_at')->paginate(10);
+    // public function index()
+    // {
+    //     $services = Service::orderByDesc('created_at')->paginate(10);
 
-        return view('admin.services.index', compact('services'));
+    //     return view('admin.services.index', compact('services'));
+    // }
+
+    public function index(Request $request)
+    {
+        $query = Service::query();
+
+        // search
+        if ($search = $request->input('q')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('short_description', 'like', '%' . $search . '%');
+            });
+        }
+
+        // category filter
+        // if ($request->filled('category')) {
+        //     $query->where('category_id', $request->input('category'));
+        // }
+
+        // status filter
+        $status = $request->input('status');
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        // 🔥 Date range filter
+        if ($request->filled('start_created')) {
+            $query->where('created_at', '>=', $request->start_created);
+        }
+        if ($request->filled('end_created')) {
+            $query->where('created_at', '<=', $request->end_created);
+        }
+
+        if ($request->filled('start_updated')) {
+            $query->where('updated_at', '>=', $request->start_updated);
+        }
+        if ($request->filled('end_updated')) {
+            $query->where('updated_at', '<=', $request->end_updated);
+        }
+
+        $services = $query->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        // $categories = Category::orderBy('name')->get();
+
+
+        return view('admin.services.index', compact('services', 'status', 'search'));
     }
+
 
     public function create()
     {

@@ -6,11 +6,6 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\ServiceController;
 
-
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
 // Route::get('/dashboard', function () {
 //     return view('dashboard');
 // })->middleware(['auth', 'verified'])->name('dashboard');
