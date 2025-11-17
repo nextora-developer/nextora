@@ -74,7 +74,11 @@
                                     'icon' => 'heroicon-o-briefcase',
                                 ],
                                 ['label' => 'Orders', 'route' => null, 'icon' => 'heroicon-o-shopping-cart'],
-                                ['label' => 'Category', 'route' => null, 'icon' => 'heroicon-o-tag'],
+                                [
+                                    'label' => 'Service Category', 
+                                    'route' => 'admin.service_categories.index', 
+                                    'icon' => 'heroicon-o-tag'
+                                ],
                                 ['label' => 'Users', 'route' => null, 'icon' => 'heroicon-o-user-group'],
                                 ['label' => 'Reports', 'route' => null, 'icon' => 'heroicon-o-chart-bar'],
                                 ['label' => 'Payment', 'route' => null, 'icon' => 'heroicon-o-currency-dollar'],

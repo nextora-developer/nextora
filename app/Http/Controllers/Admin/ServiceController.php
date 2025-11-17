@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Service;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ServiceController extends Controller
 {
@@ -75,12 +77,28 @@ class ServiceController extends Controller
     {
         $data = $request->validate([
             'title'             => ['required', 'string', 'max:255'],
+            'provider'          => ['nullable', 'string', 'max:255'],
             'short_description' => ['nullable', 'string', 'max:255'],
             'description'       => ['nullable', 'string'],
+            'price'             => ['required', 'numeric', 'min:0'],
+            'image'             => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active'         => ['nullable', 'boolean'],
         ]);
 
+        // normalize checkbox
         $data['is_active'] = $request->boolean('is_active');
+
+        // handle upload
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('services', 'public'); // storage/app/public/services
+        }
+
+        // 🔥 save path into data array
+        $data['image_path'] = $imagePath;
+
+        // optional: remove 'image' key (no such column)
+        unset($data['image']);
 
         Service::create($data);
 
@@ -88,6 +106,7 @@ class ServiceController extends Controller
             ->route('admin.services.index')
             ->with('ok', 'Service created successfully.');
     }
+
 
     public function edit(Service $service)
     {
@@ -98,12 +117,30 @@ class ServiceController extends Controller
     {
         $data = $request->validate([
             'title'             => ['required', 'string', 'max:255'],
+            'provider'          => ['nullable', 'string', 'max:255'],
             'short_description' => ['nullable', 'string', 'max:255'],
             'description'       => ['nullable', 'string'],
+            'price'             => ['required', 'numeric', 'min:0'],
+            'image'             => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active'         => ['nullable', 'boolean'],
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+
+        // 🔥 If image is uploaded, replace old one
+        if ($request->hasFile('image')) {
+
+            // delete old image (optional but recommended)
+            if ($service->image_path && Storage::disk('public')->exists($service->image_path)) {
+                Storage::disk('public')->delete($service->image_path);
+            }
+
+            // upload new image
+            $data['image_path'] = $request->file('image')->store('services', 'public');
+        }
+
+        // remove 'image' because it's not a DB column
+        unset($data['image']);
 
         $service->update($data);
 

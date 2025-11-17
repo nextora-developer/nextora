@@ -6,7 +6,7 @@
         <picture>
             <source srcset="/img/hero-mobile.webp" type="image/webp" media="(max-width: 640px)">
             <source srcset="/img/hero.png" type="image/png">
-            <img src="/img/hero.png" alt="Corporate Banner" class="absolute inset-0 w-full h-full object-cover object-center">
+            <img src="/img/hero.png" alt="Corporate Banner" class="absolute inset-0 w-full h-full object-cover object-center" draggable="false" oncontextmenu="return false;">
         </picture>
         <div class="absolute inset-0 bg-black/40"></div>
 

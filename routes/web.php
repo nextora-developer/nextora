@@ -4,7 +4,9 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\AdminAuthController;
-use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\ServiceCategoryController;
+
 
 // Route::get('/dashboard', function () {
 //     return view('dashboard');
@@ -39,15 +41,21 @@ Route::prefix('admin')->name('admin.')->middleware('guest')->group(function () {
 |  Admin Panel Protected Area
 |------------------------------ */
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+
+    // Dashboard
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('dashboard');
 
+    // Services
     Route::resource('services', ServiceController::class)->except(['show']);
 
+    // Service Categories
+    Route::resource('service_categories', ServiceCategoryController::class)->except(['show']);
+
+    // Logout
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
-
 
 
 
