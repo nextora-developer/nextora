@@ -10,13 +10,6 @@
         </div>
     @endif
 
-    {{-- <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-slate-900">Service List</h2>
-        <a href="{{ route('admin.services.create') }}"
-            class="inline-flex items-center rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-white hover:bg-gold-dark">
-            + Add New Service
-        </a>
-    </div> --}}
     <div class="mb-4 space-y-3">
         {{-- Top row: title + Add button --}}
         <div class="flex items-center justify-between gap-3">
@@ -60,11 +53,11 @@
                         <select name="category" onchange="this.form.submit()"
                             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 focus:border-gold focus:ring-gold">
                             <option value="">All categories</option>
-                            {{-- @foreach ($categories as $cat)
+                            @foreach ($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->name }}
+                                    {{ $cat->category_name }}
                                 </option>
-                            @endforeach --}}
+                            @endforeach
                         </select>
                     </div>
 
@@ -72,11 +65,11 @@
                     <div class="lg:col-span-1">
                         <select name="status" onchange="this.form.submit()"
                             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600
-                           hover:bg-slate-50 focus:border-gold focus:ring-gold">
+               hover:bg-slate-50 focus:border-gold focus:ring-gold">
                             <option value="">All status</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active only
-                            </option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive only
+                            <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="archived" {{ request('status') === 'archived' ? 'selected' : '' }}>Archived
                             </option>
                         </select>
                     </div>
@@ -124,6 +117,7 @@
                     {{-- Reset --}}
                     <div class="flex items-end">
                         @if (request('q') ||
+                                request('category') ||
                                 request('status') ||
                                 request('start_created') ||
                                 request('end_created') ||
@@ -145,42 +139,79 @@
     </div>
 
 
+    {{-- TABLE --}}
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
                 <tr>
                     <th class="px-4 py-3 text-left">Title</th>
-                    <th class="px-4 py-3 text-left">Short Description</th>
+                    <th class="px-4 py-3 text-left">Category</th>
+                    <th class="px-4 py-3 text-left">Has Packages?</th>
+                    <th class="px-4 py-3 text-left">Show on Website?</th>
                     <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Updated at</th>
                     <th class="px-4 py-3 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($services as $service)
                     <tr>
+                        {{-- Title --}}
                         <td class="px-4 py-3 align-top">
                             <div class="font-medium text-slate-900">{{ $service->title }}</div>
                             <div class="text-[11px] text-slate-400">
                                 Created {{ $service->created_at->format('Y-m-d') }}
                             </div>
                         </td>
+
+                        {{-- Category --}}
                         <td class="px-4 py-3 align-top text-slate-600">
-                            {{ $service->short_description }}
+                            {{ $service->category->name ?? '—' }}
                         </td>
+
+                        {{-- Has Packages? --}}
                         <td class="px-4 py-3 align-top">
-                            @if ($service->is_active)
-                                <span
-                                    class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                                    ● Active
-                                </span>
+                            @if ($service->has_packages)
+                                <span class="text-xs font-medium text-emerald-700">Yes</span>
                             @else
-                                <span
-                                    class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-                                    ● Inactive
-                                </span>
+                                <span class="text-xs text-slate-500">No</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 align-top text-right ">
+
+                        {{-- Show on Website? --}}
+                        <td class="px-4 py-3 align-top">
+                            @if ($service->show_on_website)
+                                <span class="text-xs font-medium text-emerald-700">Yes</span>
+                            @else
+                                <span class="text-xs text-slate-500">No</span>
+                            @endif
+                        </td>
+
+                        {{-- Status --}}
+                        <td class="px-4 py-3 align-top">
+                            @php
+                                $status = $service->status;
+                            @endphp
+
+                            <span
+                                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium
+                                @switch($status)
+                                    @case('active')   bg-emerald-50 text-emerald-700 @break
+                                    @case('draft')    bg-yellow-50 text-yellow-700 @break
+                                    @case('archived') bg-slate-100 text-slate-500 text @break
+                                    @default          bg-slate-100 text-slate-500
+                                @endswitch">
+                                ● {{ ucfirst($status) }}
+                            </span>
+                        </td>
+
+                        {{-- Updated at --}}
+                        <td class="px-4 py-3 align-top text-[11px] text-slate-500">
+                            {{ $service->updated_at->format('Y-m-d H:i') }}
+                        </td>
+
+                        {{-- Actions --}}
+                        <td class="px-4 py-3 align-top text-right">
                             <a href="{{ route('admin.services.edit', $service) }}"
                                 class="text-xs text-gold hover:text-gold-dark mr-3">
                                 Edit
@@ -198,7 +229,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-6 text-center text-sm text-slate-500">
+                        <td colspan="7" class="px-4 py-6 text-center text-sm text-slate-500">
                             No services yet. Click “Add New Service” to create one.
                         </td>
                     </tr>

@@ -6,6 +6,8 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
+use App\Http\Controllers\Admin\ServicePackageController;
+
 
 
 // Route::get('/dashboard', function () {
@@ -49,6 +51,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     // Services
     Route::resource('services', ServiceController::class)->except(['show']);
+
+    // nested routes for packages
+    Route::resource('services.packages', ServicePackageController::class)->except(['index', 'show']);
+
 
     // Service Categories
     Route::resource('service_categories', ServiceCategoryController::class)->except(['show']);

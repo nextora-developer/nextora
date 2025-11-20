@@ -3,22 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ServiceCategory;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ServiceController extends Controller
 {
-    // public function index()
-    // {
-    //     $services = Service::orderByDesc('created_at')->paginate(10);
-
-    //     return view('admin.services.index', compact('services'));
-    // }
-
     public function index(Request $request)
     {
-        $query = Service::query();
+        // $query = Service::query();
+        $query = Service::with('category'); // eager load category
+
 
         // search
         if ($search = $request->input('q')) {
@@ -28,18 +25,18 @@ class ServiceController extends Controller
             });
         }
 
-        // category filter
-        // if ($request->filled('category')) {
-        //     $query->where('category_id', $request->input('category'));
-        // }
+        // Category filter
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
 
-        // status filter
-        $status = $request->input('status');
-
-        if ($status === 'active') {
-            $query->where('is_active', true);
-        } elseif ($status === 'inactive') {
-            $query->where('is_active', false);
+        // Status filter
+        if ($request->status === 'active') {
+            $query->where('status', 'active');
+        } elseif ($request->status === 'draft') {
+            $query->where('status', 'draft');
+        } elseif ($request->status === 'archived') {
+            $query->where('status', 'archived');
         }
 
         // 🔥 Date range filter
@@ -57,51 +54,64 @@ class ServiceController extends Controller
             $query->where('updated_at', '<=', $request->end_updated);
         }
 
-        $services = $query->orderByDesc('created_at')
-            ->paginate(10)
-            ->withQueryString();
+        $services   = $query->latest()->paginate(10);
+        $categories = ServiceCategory::orderBy('category_name')->get();
 
-        // $categories = Category::orderBy('name')->get();
-
-
-        return view('admin.services.index', compact('services', 'status', 'search'));
+        return view('admin.services.index', compact('services', 'categories'));
     }
-
 
     public function create()
     {
-        return view('admin.services.create');
+        $categories = ServiceCategory::where('is_active', 1)
+            ->orderBy('category_name')
+            ->get();
+
+        return view('admin.services.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title'             => ['required', 'string', 'max:255'],
-            'provider'          => ['nullable', 'string', 'max:255'],
-            'short_description' => ['nullable', 'string', 'max:255'],
-            'description'       => ['nullable', 'string'],
-            'price'             => ['required', 'numeric', 'min:0'],
-            'image'             => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'is_active'         => ['nullable', 'boolean'],
+            'category_id'      => 'required|exists:service_categories,id',
+            'title'            => 'required|string|max:255',
+            'slug'             => 'nullable|string|max:255|unique:services,slug',
+            'short_summary'    => 'nullable|string',
+            'long_description' => 'nullable|string',
+            'starting_price'   => 'nullable|numeric|min:0',
+            'show_on_website'  => 'nullable|boolean',
+            'has_packages'     => 'nullable|boolean',
+            'status'           => 'required|in:draft,active,archived',
+            'sort_order'       => 'nullable|integer|min:0',
+            'image'            => 'nullable|mimes:jpg,jpeg,png,webp|max:2048',
+
         ]);
 
-        // normalize checkbox
-        $data['is_active'] = $request->boolean('is_active');
+        // Convert checkbox values
+        $data['show_on_website'] = $request->boolean('show_on_website');
+        $data['has_packages']    = $request->boolean('has_packages');
 
-        // handle upload
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('services', 'public'); // storage/app/public/services
+        // Auto-generate slug
+        if (empty($data['slug'])) {
+            $data['slug'] = Str::slug($data['title']);
         }
 
-        // 🔥 save path into data array
-        $data['image_path'] = $imagePath;
+        //image path
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('services', 'public');
+        }
 
-        // optional: remove 'image' key (no such column)
-        unset($data['image']);
+        // Default sort order
+        if (! isset($data['sort_order'])) {
+            $data['sort_order'] = 0;
+        }
 
-        Service::create($data);
+        $service = Service::create($data);
 
+        if ($data['has_packages']) {
+            return redirect()
+                ->route('admin.services.edit', $service)
+                ->with('ok', 'Service created. You can now add packages.');
+        }
         return redirect()
             ->route('admin.services.index')
             ->with('ok', 'Service created successfully.');
@@ -110,42 +120,64 @@ class ServiceController extends Controller
 
     public function edit(Service $service)
     {
-        return view('admin.services.edit', compact('service'));
+        $categories = ServiceCategory::where('is_active', 1)
+            ->orderBy('category_name')
+            ->get();
+
+        $packages = $service->packages()
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('admin.services.edit', compact('service', 'categories', 'packages'));
     }
 
     public function update(Request $request, Service $service)
     {
         $data = $request->validate([
-            'title'             => ['required', 'string', 'max:255'],
-            'provider'          => ['nullable', 'string', 'max:255'],
-            'short_description' => ['nullable', 'string', 'max:255'],
-            'description'       => ['nullable', 'string'],
-            'price'             => ['required', 'numeric', 'min:0'],
-            'image'             => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'is_active'         => ['nullable', 'boolean'],
+            'category_id'      => 'required|exists:service_categories,id',
+            'title'            => 'required|string|max:255',
+            'slug'             => 'nullable|string|max:255|unique:services,slug,' . $service->id,
+            'short_summary'    => 'nullable|string',
+            'long_description' => 'nullable|string',
+            'starting_price'   => 'nullable|numeric|min:0',
+            'show_on_website'  => 'nullable|boolean',
+            'has_packages'     => 'nullable|boolean',
+            'status'           => 'required|in:draft,active,archived',
+            'sort_order'       => 'nullable|integer|min:0',
+            'image'            => 'nullable|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $data['is_active'] = $request->boolean('is_active');
+        $data['show_on_website'] = $request->boolean('show_on_website');
+        $data['has_packages']    = $request->boolean('has_packages');
 
-        // 🔥 If image is uploaded, replace old one
-        if ($request->hasFile('image')) {
-
-            // delete old image (optional but recommended)
-            if ($service->image_path && Storage::disk('public')->exists($service->image_path)) {
-                Storage::disk('public')->delete($service->image_path);
-            }
-
-            // upload new image
-            $data['image_path'] = $request->file('image')->store('services', 'public');
+        if (empty($data['slug'])) {
+            $data['slug'] = Str::slug($data['title']);
         }
 
-        // remove 'image' because it's not a DB column
-        unset($data['image']);
+        if (! isset($data['sort_order'])) {
+            $data['sort_order'] = $service->sort_order ?? 0;
+        }
+
+        // Image replace (optional)
+        if ($request->hasFile('image')) {
+            // Optionally delete old file:
+            // if ($service->image) Storage::disk('public')->delete($service->image);
+
+            $data['image'] = $request->file('image')->store('services', 'public');
+        }
 
         $service->update($data);
 
+        // 🔥 Redirect logic after edit:
+        if ($data['has_packages']) {
+            // if has_packages = checked → stay on edit to manage packages
+            return redirect()
+                ->route('admin.services.edit', $service)
+                ->with('ok', 'Service updated successfully. You can manage packages below.');
+        }
+
         return redirect()
-            ->route('admin.services.index')
+            ->route('admin.services.edit', $service)
             ->with('ok', 'Service updated successfully.');
     }
 
