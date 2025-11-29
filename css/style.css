@@ -450,8 +450,17 @@
 }
 
 /* make menu center */
-.navbar-nav {
-  transform: translateX(-50px);
+@media (min-width: 992px) {
+  .navbar-nav {
+    transform: translateX(-50px);
+  }
+}
+
+/* 手机和平板时恢复正常位置 */
+@media (max-width: 991.98px) {
+  .navbar-nav {
+    transform: none !important;
+  }
 }
 
 .tech-card:hover {
